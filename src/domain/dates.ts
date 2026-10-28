@@ -134,3 +134,18 @@ export function formatRelativeDay(key: DateKey, today: DateKey): string {
 export function formatTime(hour: number, minute: number): string {
   return `${hour} h ${pad(minute)}`;
 }
+
+/** Complément « de » élidé : « d'aujourd'hui », « d'hier », « du mardi 28 octobre ». */
+export function formatOfDay(key: DateKey, today: DateKey): string {
+  const diff = diffDays(key, today);
+  if (diff === 0) return "d'aujourd'hui";
+  if (diff === 1) return "d'hier";
+  if (diff === 2) return "d'avant-hier";
+  return `du ${formatLongDate(key)}`;
+}
+
+/** « aujourd'hui », « hier », « avant-hier » ou « le mardi 28 octobre ». */
+export function formatOnDay(key: DateKey, today: DateKey): string {
+  const diff = diffDays(key, today);
+  return diff >= 0 && diff <= 2 ? formatRelativeDay(key, today) : `le ${formatLongDate(key)}`;
+}

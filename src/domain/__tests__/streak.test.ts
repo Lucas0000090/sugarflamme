@@ -186,7 +186,8 @@ describe('jokers', () => {
     const base = input({ today: '2026-01-09', entries });
     expect(canUseJoker(base, '2026-01-07')).toEqual({ ok: false, reason: 'not-missed' });
     expect(canUseJoker(base, '2026-01-08')).toEqual({ ok: false, reason: 'not-missed' }); // en attente
-    expect(canUseJoker(base, '2026-01-09')).toEqual({ ok: false, reason: 'future' });
+    expect(canUseJoker(base, '2026-01-09')).toEqual({ ok: false, reason: 'not-missed' }); // aujourd'hui, vide
+    expect(canUseJoker(base, '2026-01-10')).toEqual({ ok: false, reason: 'future' });
     expect(canUseJoker(base, '2025-12-31')).toEqual({ ok: false, reason: 'before-start' });
     const later = input({ today: '2026-01-30', entries });
     expect(canUseJoker(later, '2026-01-10')).toEqual({ ok: false, reason: 'too-old' });
@@ -195,6 +196,14 @@ describe('jokers', () => {
   it('refuse un joker quand le solde est vide', () => {
     const entries: DayEntry[] = [...successes(START, 3), { date: '2026-01-04', status: 'failure' }];
     expect(canUseJoker(input({ today: '2026-01-05', entries }), '2026-01-04')).toEqual({ ok: false, reason: 'no-joker' });
+  });
+
+  it("permet de protéger aujourd'hui après un « pas aujourd'hui »", () => {
+    const entries: DayEntry[] = [...successes(START, 7), { date: '2026-01-08', status: 'failure' }];
+    const base = input({ today: '2026-01-08', entries });
+    expect(canUseJoker(base, '2026-01-08')).toEqual({ ok: true });
+    const summary = computeStreak({ ...base, jokerUses: [{ protectedDate: '2026-01-08', usedOn: '2026-01-08' }] });
+    expect(summary.current).toBe(7);
   });
 
   it('liste les journées protégeables', () => {

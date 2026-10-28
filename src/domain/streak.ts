@@ -156,10 +156,15 @@ export type JokerEligibility =
   | { ok: true }
   | { ok: false; reason: 'no-joker' | 'not-missed' | 'too-old' | 'future' | 'before-start' };
 
-/** Peut-on utiliser un joker pour protéger cette journée ? */
+/**
+ * Peut-on utiliser un joker pour protéger cette journée ?
+ * Seules les journées manquées (« pas aujourd'hui » ou non renseignées après
+ * 48 h) des 7 derniers jours sont éligibles, y compris aujourd'hui si
+ * l'utilisateur a déjà répondu « pas aujourd'hui ».
+ */
 export function canUseJoker(input: StreakInput, date: DateKey): JokerEligibility {
   if (date < input.startDate) return { ok: false, reason: 'before-start' };
-  if (date >= input.today) return { ok: false, reason: 'future' };
+  if (date > input.today) return { ok: false, reason: 'future' };
   if (diffDays(date, input.today) > JOKER_WINDOW_DAYS) return { ok: false, reason: 'too-old' };
   const summary = computeStreak(input);
   const status = summary.statusOf(date);
@@ -171,7 +176,7 @@ export function canUseJoker(input: StreakInput, date: DateKey): JokerEligibility
 /** Journées récentes qu'un joker pourrait protéger (de la plus récente à la plus ancienne). */
 export function protectableDays(input: StreakInput): DateKey[] {
   const result: DateKey[] = [];
-  for (let offset = 1; offset <= JOKER_WINDOW_DAYS; offset += 1) {
+  for (let offset = 0; offset <= JOKER_WINDOW_DAYS; offset += 1) {
     const date = addDays(input.today, -offset);
     if (date < input.startDate) break;
     if (canUseJoker(input, date).ok) result.push(date);
