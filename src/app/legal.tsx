@@ -1,25 +1,23 @@
 import { Stack, useLocalSearchParams } from 'expo-router';
-import { Text } from 'react-native';
+import { Linking, Text } from 'react-native';
 
-import { Card, Screen } from '@/components/ui';
-import { colors, typography } from '@/theme';
+import { Button, Card, Screen } from '@/components/ui';
+import { CONTACT_EMAIL, LINKS, PUBLISHER } from '@/config';
+import { typography } from '@/theme';
 
-/**
- * Emplacements des informations légales.
- * Les passages marqués « À compléter » doivent être remplis avant publication
- * sur les stores (éditeur, contact, hébergement de la politique en ligne…).
- */
+/** Résumé des informations légales ; la version complète est en ligne (voir LINKS). */
 const DOCUMENTS = {
   privacy: {
     title: 'Confidentialité',
+    link: { label: 'Politique de confidentialité complète', url: LINKS.privacy },
     sections: [
       {
-        title: 'Données stockées',
-        body: 'Ton objectif, tes bilans quotidiens, tes pauses SOS (date, durée, intensités), tes jokers, tes badges et tes préférences de rappel.',
+        title: 'Données de suivi',
+        body: 'Ton objectif, tes bilans quotidiens, tes pauses SOS (date, durée, intensités), tes jokers, tes badges et tes préférences restent uniquement sur ce téléphone, dans une base de données locale. SugarFlame ne crée pas de compte et n’utilise aucun outil publicitaire ou de mesure d’audience.',
       },
       {
-        title: 'Où sont-elles ?',
-        body: 'Uniquement sur ce téléphone, dans une base de données locale. SugarFlame ne crée pas de compte, n’envoie aucune donnée à un serveur et n’utilise aucun outil publicitaire ou de mesure d’audience.',
+        title: 'Abonnement Premium',
+        body: 'Les paiements sont traités par Apple (App Store) ou Google (Google Play). Pour vérifier ton abonnement, SugarFlame utilise le service RevenueCat, qui reçoit un identifiant anonyme généré par l’app et l’historique de tes achats. Aucune donnée de suivi (bilans, envies) ne lui est transmise.',
       },
       {
         title: 'Notifications',
@@ -27,28 +25,28 @@ const DOCUMENTS = {
       },
       {
         title: 'Suppression',
-        body: 'Réglages → « Supprimer mes données » efface tout immédiatement. Désinstaller l’application supprime aussi ces données.',
+        body: 'Réglages → « Supprimer mes données » efface immédiatement toutes les données de suivi. Ton abonnement n’est pas affecté : gère-le depuis ton compte Apple ou Google.',
       },
-      {
-        title: 'Contact',
-        body: 'À compléter avant publication : adresse de contact pour les questions de confidentialité et lien vers la politique en ligne.',
-        todo: true,
-      },
+      { title: 'Contact', body: `${PUBLISHER} — ${CONTACT_EMAIL}` },
     ],
   },
   legal: {
     title: 'Mentions légales',
+    link: { label: 'Conditions d’utilisation complètes', url: LINKS.terms },
     sections: [
-      { title: 'Éditeur', body: 'À compléter avant publication : nom ou raison sociale, adresse, contact.', todo: true },
+      { title: 'Éditeur', body: `${PUBLISHER} — ${CONTACT_EMAIL}` },
       {
         title: 'Avertissement santé',
         body: 'SugarFlame est une application de motivation et de bien-être. Ce n’est pas un dispositif médical : elle ne pose aucun diagnostic et ne remplace pas l’avis d’un professionnel de santé.',
       },
       {
+        title: 'Abonnement',
+        body: 'SugarFlame Premium est un abonnement à renouvellement automatique (mensuel ou annuel), géré et annulable depuis ton compte Apple ou Google.',
+      },
+      {
         title: 'Propriété',
         body: 'Le nom SugarFlame, les illustrations de flammes et les contenus de l’application sont originaux.',
       },
-      { title: 'Conditions d’utilisation', body: 'À compléter avant publication.', todo: true },
     ],
   },
 } as const;
@@ -60,13 +58,14 @@ export default function LegalScreen() {
     <Screen edges={['bottom', 'left', 'right']}>
       <Stack.Screen options={{ title: document.title }} />
       {document.sections.map((section) => (
-        <Card key={section.title} style={'todo' in section && section.todo ? { borderWidth: 1, borderColor: colors.border } : undefined}>
+        <Card key={section.title}>
           <Text style={typography.heading} accessibilityRole="header">
             {section.title}
           </Text>
           <Text style={typography.body}>{section.body}</Text>
         </Card>
       ))}
+      <Button label={document.link.label} variant="secondary" onPress={() => void Linking.openURL(document.link.url)} />
     </Screen>
   );
 }

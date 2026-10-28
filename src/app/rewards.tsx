@@ -1,7 +1,8 @@
-import { StyleSheet, Text, View } from 'react-native';
+import { router } from 'expo-router';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { Flame } from '@/components/Flame';
-import { Card, ProgressBar, Screen, SectionTitle } from '@/components/ui';
+import { Button, Card, Choice, haptic, ProgressBar, Screen, SectionTitle } from '@/components/ui';
 import { BASE_TIER, nextTierProgress, REWARD_TIERS } from '@/domain/rewards';
 import { useApp } from '@/state/AppProvider';
 import { colors, spacing, typography } from '@/theme';
@@ -12,7 +13,8 @@ function formatDate(iso: string) {
 }
 
 export default function RewardsScreen() {
-  const { snapshot, streak, flameTier } = useApp();
+  const { snapshot, streak, flameTier, isPremium, profile, setFlamePreference } = useApp();
+  const preference = profile?.flamePreference ?? null;
   const current = streak?.current ?? 0;
   const unlocked = new Map(snapshot.rewards.map((reward) => [reward.tierDays, reward]));
   const next = nextTierProgress(current);
@@ -44,15 +46,39 @@ export default function RewardsScreen() {
       ) : null}
 
       <SectionTitle>Paliers</SectionTitle>
+      {isPremium ? (
+        <View style={{ gap: spacing.sm }}>
+          <Text style={typography.body}>Choisis la flamme affichée sur l’accueil parmi celles que tu as débloquées.</Text>
+          <Choice
+            title="Automatique"
+            description="La flamme suit ta série en cours."
+            selected={preference === null}
+            onPress={() => void setFlamePreference(null)}
+          />
+        </View>
+      ) : (
+        <Card style={{ borderWidth: 1, borderColor: colors.primaryMuted }}>
+          <Text style={typography.bodyStrong}>Personnalise ta flamme</Text>
+          <Text style={typography.body}>Avec Premium, choisis l’apparence de ta flamme parmi celles que tu as débloquées.</Text>
+          <Button label="Découvrir Premium" variant="secondary" onPress={() => router.push('/premium')} />
+        </Card>
+      )}
       <View style={styles.grid}>
         {[BASE_TIER, ...REWARD_TIERS].map((tier) => {
           const reward = unlocked.get(tier.days);
           const isUnlocked = tier.days === 0 || Boolean(reward);
+          const isChosen = isPremium && preference === tier.days;
           return (
-            <View
+            <Pressable
               key={tier.id}
-              style={[styles.badge, isUnlocked && styles.badgeUnlocked]}
-              accessible
+              disabled={!isPremium || !isUnlocked}
+              onPress={() => {
+                haptic('light');
+                void setFlamePreference(tier.days);
+              }}
+              style={[styles.badge, isUnlocked && styles.badgeUnlocked, isChosen && styles.badgeChosen]}
+              accessibilityRole={isPremium && isUnlocked ? 'radio' : undefined}
+              accessibilityState={isPremium && isUnlocked ? { checked: isChosen } : undefined}
               accessibilityLabel={`${tier.name}, ${tier.days === 0 ? 'apparence de départ' : `${tier.days} jours`}, ${
                 isUnlocked ? 'débloqué' : 'à débloquer'
               }`}
@@ -66,13 +92,13 @@ export default function RewardsScreen() {
                     ? `Débloqué le ${formatDate(reward.unlockedAt)}`
                     : `${tier.days} jours de série`}
               </Text>
-            </View>
+              {isChosen ? <Text style={styles.chosen}>Flamme affichée</Text> : null}
+            </Pressable>
           );
         })}
       </View>
       <Text style={[typography.caption, styles.center]}>
-        Les badges débloqués restent acquis, même après un écart. La personnalisation de la flamme arrivera avec
-        SugarFlame Premium.
+        Les badges débloqués restent acquis, même après un écart.
       </Text>
     </Screen>
   );
@@ -92,5 +118,7 @@ const styles = StyleSheet.create({
     opacity: 0.75,
   },
   badgeUnlocked: { opacity: 1, borderWidth: 1, borderColor: colors.primaryMuted },
+  badgeChosen: { borderWidth: 2, borderColor: colors.primary },
+  chosen: { color: colors.primarySoft, fontSize: 12, fontWeight: '700' },
   center: { textAlign: 'center' },
 });

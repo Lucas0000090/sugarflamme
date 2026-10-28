@@ -68,6 +68,11 @@ export const MIGRATIONS: readonly { version: number; sql: string }[] = [
       );
     `,
   },
+  {
+    // Premium : apparence de flamme choisie (jours du palier, NULL = automatique).
+    version: 2,
+    sql: `ALTER TABLE profile ADD COLUMN flame_preference INTEGER;`,
+  },
 ];
 
 export const LATEST_SCHEMA_VERSION = MIGRATIONS[MIGRATIONS.length - 1]?.version ?? 0;

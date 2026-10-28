@@ -18,6 +18,8 @@ export interface Profile {
   reminderHour: number;
   reminderMinute: number;
   notificationsEnabled: boolean;
+  /** Apparence de flamme choisie (Premium), en jours de palier ; null = automatique. */
+  flamePreference: number | null;
 }
 
 export interface StoredDayEntry extends DayEntry {
@@ -61,6 +63,7 @@ type ProfileRow = {
   reminder_hour: number;
   reminder_minute: number;
   notifications_enabled: number;
+  flame_preference: number | null;
 };
 
 export async function loadSnapshot(db: SQLiteDatabase): Promise<Snapshot> {
@@ -103,6 +106,7 @@ export async function loadSnapshot(db: SQLiteDatabase): Promise<Snapshot> {
           reminderHour: profileRow.reminder_hour,
           reminderMinute: profileRow.reminder_minute,
           notificationsEnabled: profileRow.notifications_enabled === 1,
+          flamePreference: profileRow.flame_preference ?? null,
         }
       : null,
     goals: goals.map((row) => ({
@@ -353,6 +357,10 @@ export async function updateReminder(
   }
   if (sets.length === 0) return;
   await db.runAsync(`UPDATE profile SET ${sets.join(', ')} WHERE id = 1`, values);
+}
+
+export async function setFlamePreference(db: SQLiteDatabase, tierDays: number | null): Promise<void> {
+  await db.runAsync('UPDATE profile SET flame_preference = ? WHERE id = 1', [tierDays]);
 }
 
 export async function markRewardsCelebrated(db: SQLiteDatabase, tierDays: readonly number[], now: Date) {

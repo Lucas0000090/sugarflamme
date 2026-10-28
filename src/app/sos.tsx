@@ -8,7 +8,7 @@ import { Icon } from '@/components/Icon';
 import { IntensityPicker } from '@/components/IntensityPicker';
 import { Button, Card, haptic, ProgressBar, Screen } from '@/components/ui';
 import { toDateKey } from '@/domain/dates';
-import { FREE_LIMITS, PREMIUM_OFFER } from '@/domain/premium';
+import { FREE_LIMITS } from '@/domain/premium';
 import { SOS_EXTENSION_SECONDS, SOS_PAUSE_SECONDS } from '@/domain/rules';
 import { intensityFeedback } from '@/domain/sos';
 import { useApp } from '@/state/AppProvider';
@@ -200,14 +200,14 @@ export default function SosScreen() {
             </View>
           ))}
         </Card>
-        <Card style={{ borderWidth: 1, borderColor: colors.border }}>
-          <Text style={typography.bodyStrong}>Bientôt : SugarFlame Premium</Text>
+        <Card style={{ borderWidth: 1, borderColor: colors.primaryMuted }}>
+          <Text style={typography.bodyStrong}>Pauses illimitées avec Premium</Text>
           <Text style={typography.body}>
-            Pauses illimitées et accompagnement personnalisé ({PREMIUM_OFFER.monthlyPrice} ou {PREMIUM_OFFER.yearlyPrice}).
-            Pas encore disponible dans cette version.
+            Avec SugarFlame Premium, une pause guidée t’attend chaque fois qu’une envie arrive.
           </Text>
+          <Button label="Découvrir Premium" onPress={() => router.push('/premium')} />
         </Card>
-        <Button label="Revenir à l’accueil" onPress={close} />
+        <Button label="Revenir à l’accueil" variant="secondary" onPress={close} />
       </Screen>
     );
   }

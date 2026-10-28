@@ -8,7 +8,7 @@ import { cleanup, fireEvent, renderRouter, screen } from 'expo-router/testing-li
 import type { Snapshot } from '@/db/repository';
 import { addDays, dateRange, toDateKey } from '@/domain/dates';
 import { goalForDate, upcomingGoal } from '@/domain/goals';
-import { FREE_ENTITLEMENTS } from '@/domain/premium';
+import { Entitlements, FREE_ENTITLEMENTS } from '@/domain/premium';
 import { nextTierProgress, tierByDays, tierForStreak } from '@/domain/rewards';
 import { computeStreak, protectableDays } from '@/domain/streak';
 import { pendingValidationDays } from '@/domain/validation';
@@ -17,6 +17,21 @@ import { pendingValidationDays } from '@/domain/validation';
 // échoue sous Jest avec cette version et laisse un module vide : on le
 // complète avec le mock local (voir jest/reanimated-mock.js).
 Object.assign(require('react-native-reanimated'), require('../../../jest/reanimated-mock'));
+
+const mockPlans = [
+  { kind: 'annual', priceString: '24,99 €', price: 24.99, pricePerMonthString: '2,08 €', pkg: {} },
+  { kind: 'monthly', priceString: '3,99 €', price: 3.99, pricePerMonthString: null, pkg: {} },
+];
+const mockPurchase = jest.fn(async () => ({ status: 'success', entitlements: { plan: 'premium' } }));
+const mockRestore = jest.fn(async () => ({ ok: true, entitlements: { plan: 'free' } }));
+let mockAvailable = true;
+jest.mock('@/services/purchases', () => ({
+  purchasesAvailable: () => mockAvailable,
+  fetchPlans: jest.fn(async () => mockPlans),
+  purchase: (...args: unknown[]) => mockPurchase(...(args as [])),
+  restore: () => mockRestore(),
+  openSubscriptionManagement: jest.fn(),
+}));
 
 jest.mock('@/services/notifications', () => ({
   getPermissionState: jest.fn(async () => 'granted'),
@@ -38,6 +53,7 @@ function buildApp(overrides: Partial<Snapshot> = {}) {
       reminderHour: 21,
       reminderMinute: 0,
       notificationsEnabled: true,
+      flamePreference: null,
     },
     goals: [{ id: 1, type: 'desserts', customLabel: null, effectiveFrom: start }],
     entries: [
@@ -77,7 +93,11 @@ function buildApp(overrides: Partial<Snapshot> = {}) {
     snapshot,
     now,
     today,
-    entitlements: FREE_ENTITLEMENTS,
+    entitlements: FREE_ENTITLEMENTS as Entitlements,
+    isPremium: false,
+    purchasesAvailable: true,
+    setEntitlements: jest.fn(),
+    setFlamePreference: jest.fn(async () => undefined),
     profile,
     streak,
     currentGoal: goalForDate(snapshot.goals, today),
@@ -128,10 +148,13 @@ const routes = {
   settings: require('../settings').default,
   rules: require('../rules').default,
   legal: require('../legal').default,
+  premium: require('../premium').default,
 };
 
 beforeEach(() => {
   mockApp = buildApp();
+  mockAvailable = true;
+  mockPurchase.mockClear();
 });
 
 afterEach(async () => {
@@ -236,6 +259,51 @@ describe('écrans', () => {
     await renderRouter(routes, { initialUrl: '/rules' });
     expect(await screen.findByText('Les jokers')).toBeTruthy();
     await renderRouter(routes, { initialUrl: '/legal?doc=privacy' });
-    expect(await screen.findByText('Données stockées')).toBeTruthy();
+    expect(await screen.findByText('Données de suivi')).toBeTruthy();
+  });
+
+  it("l'abonnement affiche les prix du store, les mentions et la restauration", async () => {
+    await renderRouter(routes, { initialUrl: '/premium' });
+    expect(await screen.findByText('24,99 € / an')).toBeTruthy();
+    expect(screen.getByText('3,99 € / mois')).toBeTruthy();
+    expect(screen.getByText('−48 %')).toBeTruthy();
+    expect(screen.getByText('Restaurer mes achats')).toBeTruthy();
+    expect(screen.getByText(/renouvellement automatique/)).toBeTruthy();
+    expect(screen.getByText('Conditions d’utilisation')).toBeTruthy();
+    await fireEvent.press(screen.getByText('3,99 € / mois'));
+    await fireEvent.press(screen.getByText('S’abonner'));
+    expect(mockPurchase).toHaveBeenCalledWith(expect.objectContaining({ kind: 'monthly' }));
+    expect(mockApp.setEntitlements).toHaveBeenCalledWith({ plan: 'premium' });
+  });
+
+  it("l'abonnement indique clairement quand les achats sont indisponibles", async () => {
+    mockAvailable = false;
+    mockApp = { ...buildApp(), purchasesAvailable: false };
+    await renderRouter(routes, { initialUrl: '/premium' });
+    expect(await screen.findByText('Abonnement indisponible pour le moment')).toBeTruthy();
+    expect(screen.queryByText('S’abonner')).toBeNull();
+  });
+
+  it('la limite SOS propose Premium', async () => {
+    mockApp = { ...buildApp(), canStartSos: false };
+    await renderRouter(routes, { initialUrl: '/sos' });
+    expect(await screen.findByText('Découvrir Premium')).toBeTruthy();
+  });
+
+  it('les statistiques détaillées sont verrouillées en gratuit et visibles en Premium', async () => {
+    await renderRouter(routes, { initialUrl: '/progress' });
+    expect(await screen.findByText('Débloquer avec Premium')).toBeTruthy();
+    await cleanup();
+    mockApp = { ...buildApp(), isPremium: true, entitlements: { plan: 'premium' } };
+    await renderRouter(routes, { initialUrl: '/progress' });
+    expect(await screen.findByText('Réussite par jour de la semaine')).toBeTruthy();
+    expect(screen.getByText('Quand arrivent tes envies')).toBeTruthy();
+  });
+
+  it('un abonné peut choisir sa flamme parmi les badges débloqués', async () => {
+    mockApp = { ...buildApp(), isPremium: true, entitlements: { plan: 'premium' } };
+    await renderRouter(routes, { initialUrl: '/rewards' });
+    await fireEvent.press(await screen.findByLabelText(/Étincelle, 3 jours, débloqué/));
+    expect(mockApp.setFlamePreference).toHaveBeenCalledWith(3);
   });
 });

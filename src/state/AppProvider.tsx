@@ -5,11 +5,12 @@ import { AppState } from 'react-native';
 import * as repo from '@/db/repository';
 import { DateKey, toDateKey } from '@/domain/dates';
 import { CravingMoment, Goal, goalForDate, GoalType, upcomingGoal } from '@/domain/goals';
-import { canStartSosPause, Entitlements, FREE_ENTITLEMENTS } from '@/domain/premium';
-import { nextTierProgress, RewardTier, tierByDays, tierForStreak } from '@/domain/rewards';
+import { canStartSosPause, Entitlements, FREE_ENTITLEMENTS, hasFeature } from '@/domain/premium';
+import { displayedTier, nextTierProgress, RewardTier, tierByDays } from '@/domain/rewards';
 import { computeStreak, EntryStatus, protectableDays, StreakInput, StreakSummary } from '@/domain/streak';
 import { pendingValidationDays } from '@/domain/validation';
 import * as notifications from '@/services/notifications';
+import * as purchases from '@/services/purchases';
 
 interface AppContextValue {
   ready: boolean;
@@ -18,6 +19,12 @@ interface AppContextValue {
   now: Date;
   today: DateKey;
   entitlements: Entitlements;
+  isPremium: boolean;
+  /** Les achats intégrés sont-ils configurés sur cette version ? */
+  purchasesAvailable: boolean;
+  /** Met à jour les droits (après un achat ou une restauration). */
+  setEntitlements: (entitlements: Entitlements) => void;
+  setFlamePreference: (tierDays: number | null) => Promise<void>;
   profile: repo.Profile | null;
   streak: StreakSummary | null;
   currentGoal: Goal | null;
@@ -90,6 +97,26 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [ready, setReady] = useState(false);
   const [error, setError] = useState<Error | null>(null);
   const now = useNow();
+  const [entitlements, setEntitlements] = useState<Entitlements>(FREE_ENTITLEMENTS);
+  const [purchasesReady, setPurchasesReady] = useState(false);
+
+  // Abonnement : état initial (mis en cache par RevenueCat, disponible hors ligne) puis mises à jour.
+  useEffect(() => {
+    if (!purchases.configurePurchases()) return;
+    let active = true;
+    void purchases.fetchEntitlements().then((value) => {
+      if (!active) return;
+      setEntitlements(value);
+      setPurchasesReady(true);
+    });
+    const unsubscribe = purchases.onEntitlementsChange((value) => {
+      if (active) setEntitlements(value);
+    });
+    return () => {
+      active = false;
+      unsubscribe();
+    };
+  }, []);
   const today = toDateKey(now);
 
   const refresh = useCallback(async () => {
@@ -153,22 +180,28 @@ export function AppProvider({ children }: { children: ReactNode }) {
       .map((reward) => tierByDays(reward.tierDays))
       .filter((tier): tier is RewardTier => tier !== undefined);
     const sosToday = snapshot.sosSessions.filter((session) => session.date === today).length;
+    const flameTier = displayedTier({
+      streak: current,
+      preference: profile?.flamePreference ?? null,
+      unlocked: unlockedTierDays,
+      canCustomize: hasFeature(entitlements, 'flame-customization'),
+    });
     return {
       streak,
       currentGoal: goalForDate(snapshot.goals, today),
       scheduledGoal: upcomingGoal(snapshot.goals, today),
-      flameTier: tierForStreak(current),
+      flameTier,
       next: nextTierProgress(current),
       pendingDays: profile ? pendingValidationDays({ startDate: profile.startDate, now: instant, recordedDates }) : [],
       protectable: streakInput ? protectableDays(streakInput) : [],
       unlockedTierDays,
       uncelebrated,
       sosToday,
-      canStartSos: canStartSosPause(FREE_ENTITLEMENTS, sosToday),
+      canStartSos: canStartSosPause(entitlements, sosToday),
     };
     // `now` force le recalcul à chaque minute (ouverture de la validation à 18 h).
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [snapshot, profile, today, recordedDates, now]);
+  }, [snapshot, profile, today, recordedDates, now, entitlements]);
 
   const value = useMemo<AppContextValue>(
     () => ({
@@ -177,7 +210,14 @@ export function AppProvider({ children }: { children: ReactNode }) {
       snapshot,
       now,
       today,
-      entitlements: FREE_ENTITLEMENTS,
+      entitlements,
+      isPremium: entitlements.plan === 'premium',
+      purchasesAvailable: purchasesReady || purchases.purchasesAvailable(),
+      setEntitlements,
+      setFlamePreference: async (tierDays) => {
+        await repo.setFlamePreference(db, tierDays);
+        await refresh();
+      },
       profile,
       ...derived,
       refresh,
@@ -236,7 +276,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         await refresh();
       },
     }),
-    [ready, error, snapshot, now, today, profile, derived, refresh, db],
+    [ready, error, snapshot, now, today, profile, derived, refresh, db, entitlements, purchasesReady],
   );
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;

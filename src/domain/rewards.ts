@@ -124,3 +124,23 @@ export function nextTierProgress(streak: number): {
 export function newlyReachedTiers(bestStreak: number, unlocked: ReadonlySet<number>): RewardTier[] {
   return REWARD_TIERS.filter((tier) => bestStreak >= tier.days && !unlocked.has(tier.days));
 }
+
+/**
+ * Apparence affichée : par défaut celle de la série en cours. Un abonné
+ * Premium peut choisir une flamme parmi les badges déjà débloqués
+ * (0 = Braise, toujours disponible).
+ */
+export function displayedTier(params: {
+  streak: number;
+  preference: number | null;
+  unlocked: ReadonlySet<number>;
+  canCustomize: boolean;
+}): RewardTier {
+  const { streak, preference, unlocked, canCustomize } = params;
+  if (canCustomize && preference !== null) {
+    if (preference === 0) return BASE_TIER;
+    const tier = tierByDays(preference);
+    if (tier && unlocked.has(preference)) return tier;
+  }
+  return tierForStreak(streak);
+}

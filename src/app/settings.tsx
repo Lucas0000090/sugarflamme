@@ -195,21 +195,27 @@ export default function SettingsScreen() {
 
       <SectionTitle>SugarFlame Premium</SectionTitle>
       <Card>
-        <Text style={typography.bodyStrong}>Bientôt disponible</Text>
-        <Text style={typography.body}>
-          Tu utilises l’offre gratuite : série quotidienne, badges, bilan du soir, une pause SOS par jour et statistiques de
-          base.
-        </Text>
-        {PREMIUM_OFFER.features.map((feature) => (
-          <View key={feature} style={styles.feature}>
-            <Icon name="lock" size={16} color={colors.textMuted} />
-            <Text style={typography.body}>{feature}</Text>
-          </View>
-        ))}
-        <Text style={typography.caption}>
-          Tarifs envisagés : {PREMIUM_OFFER.monthlyPrice} ou {PREMIUM_OFFER.yearlyPrice}. Aucun achat n’est possible dans
-          cette version.
-        </Text>
+        {app.isPremium ? (
+          <>
+            <Text style={typography.bodyStrong}>Premium actif</Text>
+            <Text style={typography.body}>Pauses SOS illimitées, statistiques détaillées et choix de la flamme.</Text>
+            <Button label="Mon abonnement" variant="secondary" onPress={() => router.push('/premium')} />
+          </>
+        ) : (
+          <>
+            <Text style={typography.bodyStrong}>Offre gratuite</Text>
+            <Text style={typography.body}>
+              Série quotidienne, badges, bilan du soir, une pause SOS par jour et statistiques de base.
+            </Text>
+            {PREMIUM_OFFER.features.map((feature) => (
+              <View key={feature.title} style={styles.feature}>
+                <Icon name="lock" size={16} color={colors.textMuted} />
+                <Text style={typography.body}>{feature.title}</Text>
+              </View>
+            ))}
+            <Button label="Découvrir Premium" onPress={() => router.push('/premium')} />
+          </>
+        )}
       </Card>
 
       <SectionTitle>Aide et informations</SectionTitle>

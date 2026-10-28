@@ -108,6 +108,7 @@ function RootNavigator() {
         <Stack.Screen name="settings" options={{ title: 'Réglages' }} />
         <Stack.Screen name="rules" options={{ title: 'Règles des séries' }} />
         <Stack.Screen name="legal" options={{ title: 'Informations' }} />
+        <Stack.Screen name="premium" options={{ headerShown: false, presentation: 'modal' }} />
       </Stack>
       <NotificationResponder />
       <HideSplashWhenReady />

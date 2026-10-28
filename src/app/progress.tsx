@@ -3,6 +3,7 @@ import { StyleSheet, Text, View } from 'react-native';
 import Svg, { G, Line, Rect, Text as SvgText } from 'react-native-svg';
 
 import { Legend, MonthCalendar } from '@/components/DayStatus';
+import { DetailedStats, DetailedStatsTeaser } from '@/components/DetailedStats';
 import { Card, EmptyState, Screen, SectionTitle, StatTile } from '@/components/ui';
 import { startOfMonth } from '@/domain/dates';
 import { REWARD_TIERS } from '@/domain/rewards';
@@ -84,7 +85,7 @@ function IntensityChart({ sessions }: { sessions: SosSession[] }) {
 }
 
 export default function ProgressScreen() {
-  const { snapshot, streak, today, profile } = useApp();
+  const { snapshot, streak, today, profile, isPremium } = useApp();
   const [month, setMonth] = useState(startOfMonth(today));
 
   if (!streak || !profile) return null;
@@ -141,6 +142,13 @@ export default function ProgressScreen() {
           </>
         )}
       </Card>
+
+      <SectionTitle>Statistiques détaillées</SectionTitle>
+      {isPremium ? (
+        <DetailedStats summary={streak} startDate={profile.startDate} today={today} sessions={sessions} />
+      ) : (
+        <DetailedStatsTeaser />
+      )}
 
       <SectionTitle>Récompenses acquises</SectionTitle>
       <Card>
