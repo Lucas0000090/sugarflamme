@@ -102,10 +102,11 @@ Chaque soir (21 h par défaut, réglable de 18 h à 23 h 45), une notification l
 
 ## Gratuit / Premium
 
-`src/domain/premium.ts` centralise les droits. En V1, tout le monde est en offre gratuite (série, badges, bilan, **une pause SOS guidée par jour**, statistiques de base). Aucun achat intégré n'est installé ni simulé ; l'écran Réglages présente l'offre envisagée (3,99 €/mois ou 24,99 €/an) à titre d'information, sans bouton d'achat. Pour brancher RevenueCat plus tard, il suffira de fournir de vrais droits (`Entitlements`) depuis `AppProvider`.
+- **Gratuit** : série, badges, bilan du soir, une pause SOS guidée par jour, statistiques de base.
+- **Premium** (abonnement App Store / Google Play, 3,99 €/mois ou 24,99 €/an) : pauses SOS illimitées, statistiques détaillées, choix de l'apparence de la flamme.
 
-## Avant publication sur les stores
+Les achats passent par RevenueCat (`src/services/purchases.ts`) avec le droit `premium`. Les clés publiques se configurent via `EXPO_PUBLIC_REVENUECAT_IOS_KEY` / `EXPO_PUBLIC_REVENUECAT_ANDROID_KEY` (voir `.env.example`). Sans clé, ou dans Expo Go, l'écran d'abonnement indique que les achats sont indisponibles : pour tester un vrai achat, il faut un build (TestFlight).
 
-- Compléter les mentions légales et la politique de confidentialité (`src/app/legal.tsx`, sections marquées « À compléter »).
-- Vérifier les identifiants `com.sugarflame.app` dans `app.json`.
-- SugarFlame est un outil de motivation : ne pas le présenter comme un dispositif médical.
+## Publication
+
+Tout est décrit pas à pas dans [PUBLICATION.md](PUBLICATION.md) : comptes, abonnements, RevenueCat, build EAS, fiche App Store prête à coller et captures d'écran (`store/`). Les pages légales en ligne sont dans `docs/` (GitHub Pages).
