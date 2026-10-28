@@ -53,7 +53,9 @@ export default function SosScreen() {
   const startedAt = useRef<Date | null>(null);
   const finishedNotified = useRef(false);
   // Limite décidée à l'ouverture de l'écran (la session en cours ne la consomme pas).
-  const [allowed] = useState(app.canStartSos);
+  const [allowedAtOpen] = useState(app.canStartSos);
+  // Un abonnement souscrit depuis cet écran débloque la pause immédiatement.
+  const allowed = allowedAtOpen || app.isPremium;
 
   const currentElapsed = useCallback(
     () => accumulated.current + (resumedAt.current !== null ? Date.now() - resumedAt.current : 0),
