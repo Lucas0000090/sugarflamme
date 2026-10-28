@@ -137,7 +137,7 @@ export function Flame({ tier, size = 200, locked = false, animated = true, acces
               <Stop offset="1" stopColor={palette.glow} stopOpacity={0} />
             </RadialGradient>
           </Defs>
-          <Ellipse cx={100} cy={160} rx={100} ry={90} fill={`url(#glow${id})`} />
+          <Ellipse cx={100} cy={152} rx={96} ry={84} fill={`url(#glow${id})`} />
           {isLegendary ? (
             <Circle cx={100} cy={150} r={92} stroke={palette.middle} strokeOpacity={0.35} strokeWidth={2} fill="none" />
           ) : null}

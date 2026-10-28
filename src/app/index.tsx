@@ -77,7 +77,7 @@ export default function HomeScreen() {
   return (
     <Screen>
       <View style={styles.header}>
-        <View>
+        <View style={styles.fill}>
           <Text style={typography.caption}>SugarFlame</Text>
           <Text style={typography.heading} numberOfLines={2}>
             {currentGoal ? goalLabel(currentGoal) : 'Ton objectif'}
