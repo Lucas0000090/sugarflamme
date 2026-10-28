@@ -2,11 +2,9 @@
 
 Ce guide liste, dans l'ordre, tout ce qu'il reste à faire pour publier l'app. Le code est prêt : l'abonnement fonctionne dès que les comptes ci-dessous sont créés et que les clés sont renseignées.
 
-> **Dépenses obligatoires** (à décider par toi, rien n'a été engagé) :
-> - **Apple Developer Program : 99 € par an**, indispensable pour publier sur l'App Store.
-> - **Google Play Console : 25 $ une seule fois**, pour Android.
+> **Comptes** : tu as déjà un compte Apple Developer et un compte Google Play Console (utilisés pour GetLunchy). Aucun nouveau compte payant n'est nécessaire.
 > - **RevenueCat** (vérification des abonnements) : gratuit tant que les revenus mensuels restent sous 2 500 $ (à vérifier sur revenuecat.com/pricing).
-> - **Commission des stores** : 15 % des ventes, à condition de t'inscrire au programme « Small Business » d'Apple. Chez Google, c'est 15 % sur les abonnements.
+> - **Commission des stores** : 15 % des ventes si tu es inscrit au programme « Small Business » d'Apple (sinon 30 %), 15 % sur les abonnements Google.
 
 ---
 
@@ -27,12 +25,14 @@ Apple et Google exigent une politique de confidentialité et une page d'assistan
    - Confidentialité : https://lucas0000090.github.io/sugarflamme/confidentialite.html
    - Conditions : https://lucas0000090.github.io/sugarflamme/conditions.html
 
-## Étape 2 — Comptes développeur
+## Étape 2 — Vérifier tes comptes existants pour les ventes
 
-- **Apple** : inscris-toi sur https://developer.apple.com/programs/ (99 €/an), en tant que particulier ou entreprise.
-- Une fois inscrit, dans **App Store Connect → Accords, taxes et services bancaires** : accepte l'accord **« Apps payantes »** et renseigne ta banque et tes informations fiscales. Sans cela, les achats intégrés ne fonctionnent pas.
-- Inscris-toi au **App Store Small Business Program** (commission de 15 % au lieu de 30 %) : https://developer.apple.com/app-store/small-business-program/
-- **Google** (pour plus tard) : https://play.google.com/console (25 $), puis configure le profil de paiement marchand.
+GetLunchy est gratuite : ton compte n'est peut-être pas encore prêt à vendre. À vérifier une seule fois :
+
+- **Apple** — App Store Connect → **Accords, taxes et services bancaires** : l'accord **« Apps payantes »** doit être **actif**, avec ta banque et tes informations fiscales renseignées. Sans lui, les abonnements restent indisponibles, même en test.
+- **Apple** — inscris-toi au **App Store Small Business Program** si ce n'est pas déjà fait (commission de 15 % au lieu de 30 %) : https://developer.apple.com/app-store/small-business-program/
+- **Google** — Play Console → **Paramètres → Profil de paiement** : un profil marchand est nécessaire pour vendre des abonnements.
+- **Google, compte personnel** : si ton compte développeur est un compte **personnel** créé après novembre 2023, Google impose pour chaque nouvelle app un **test fermé avec au moins 12 testeurs pendant 14 jours** avant la publication en production. Tu l'as sans doute déjà fait pour GetLunchy. Prévois-le dès le début pour SugarFlame, car c'est l'étape la plus longue côté Android.
 
 ## Étape 3 — Créer l'app et l'abonnement dans App Store Connect
 
@@ -73,7 +73,7 @@ npx eas-cli@latest build --platform ios --profile production
 npx eas-cli@latest submit --platform ios --latest
 ```
 
-Lors du premier build, EAS te demande de te connecter avec ton compte Apple et crée lui-même les certificats. Ces clés RevenueCat sont publiques par conception : elles peuvent être en clair (`plaintext`).
+Lors du premier build, EAS te demande de te connecter avec ton compte Apple (celui de GetLunchy) et crée lui-même le certificat et le profil pour `com.sugarflame.app`, sans toucher à GetLunchy. Ces clés RevenueCat sont publiques par conception : elles peuvent être en clair (`plaintext`).
 
 ## Étape 6 — Tester l'achat avant publication (TestFlight)
 
@@ -143,7 +143,7 @@ Lors du premier build, EAS te demande de te connecter avec ton compte Apple et c
 
 ## Étape 8 — Google Play (quand tu voudras)
 
-1. Crée l'app dans la Play Console (langue : français, application gratuite avec achats intégrés).
+1. Dans ta Play Console, **Créer une application** (langue : français, application gratuite avec achats intégrés). Si ton compte est personnel, commence par le test fermé (12 testeurs, 14 jours), comme indiqué à l'étape 2.
 2. **Monétiser → Abonnements** : crée deux abonnements avec les mêmes identifiants que sur iOS (mensuel 3,99 €, annuel 24,99 €).
 3. Relie Google Play à RevenueCat : il faut un compte de service Google Cloud ; l'assistant RevenueCat explique la marche à suivre.
 4. Dans RevenueCat, rattache les produits Google au droit `premium` et aux packages Monthly et Annual.
